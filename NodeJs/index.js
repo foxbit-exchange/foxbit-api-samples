@@ -2,7 +2,7 @@
 const WebSocket = require('ws');
 
 //WebSocketAPI Address
-var wsAddress = 'wss://apifoxbitprodlb.alphapoint.com/WSGateway/';
+var wsAddress = 'wss://api.foxbit.com.br/';
 
 //Instantiate SleepModule
 var sleep = require('system-sleep');
@@ -19,26 +19,26 @@ var userPass = "";
 var userId = "0";
 var sessionToken = "";
 
-//Wait PromptInformation    
+//Wait PromptInformation
 var stdin2FA = process.openStdin();
 
 //side variable = Buy/Sell
 var side = 1;
 
 //Message Frame
-var messageFrame = {   
+var messageFrame = {
 
     "m":0,		//MessageType ( 0_Request / 1_Reply / 2_Subscribe / 3_Event / 4_Unsubscribe / Error )
     "i":0,		//Sequence Number
     "n":"",		//Function Name
     "o":""		//Payload
-    
+
 };
 
 //WebSocket Event Area
-//Event Open Connection 
-ws.on('open', function open() { 
-   
+//Event Open Connection
+ws.on('open', function open() {
+
     consoleMessage('------------------------------------------------------------------------','startup');
     consoleMessage('Got connection','open.event');
 
@@ -58,26 +58,26 @@ ws.on('message', function incoming(data) {
 
 //Event Error Message
 ws.on('error', function(error) {
-    
+
     consoleMessage('WebService','error! ' + error);
-    
+
 });
 
 //Event Close Message
 ws.on('close', function() {
-    
+
     consoleMessage('WebService','close! ');
 
     WebAuthenticateUser(messageFrame);
-   
+
 });
 
 /*
 //Event End Message
 ws.on('end', function(data) {
-    
+
     consoleMessage('WebService','end! ' + data);
-    
+
 });
 */
 
@@ -87,11 +87,11 @@ function AskPrompt(message){
     consoleMessage(message);
 
 	stdin.addListener("data", function(d) {
-                
+
         var ret = d.toString().trim();
 
         consoleMessage('!AskPrompt', ret);
-        
+
         return ret;
 
     });
@@ -100,7 +100,7 @@ function AskPrompt(message){
 
 //Function DealMessage
 function dealMessage(frame, message){
-        
+
     var ret = JSON.parse(message);
 
     if (ret.n == "WebAuthenticateUser"){
@@ -114,15 +114,15 @@ function dealMessage(frame, message){
         }
 
     }else if (ret.n == "GetUserInfo"){
-        
+
     	consoleMessage('<-' + ret.n, JSON.stringify(ret));
-    
+
     }else if (ret.n == 'SendOrder'){
 
     	consoleMessage('<-' + ret.n, JSON.stringify(ret));
 
     }else if(ret.n == 'Authenticate2FA') {
-        
+
         authenticated = true;
 
         consoleMessage('<-' + ret.n, JSON.stringify(ret));
@@ -133,15 +133,15 @@ function dealMessage(frame, message){
 
             sessionToken = JSON.stringify(paramO.SessionToken);
             userId = JSON.stringify(paramO.UserId);
-    
+
             consoleMessage('<- sessionToken', sessionToken);
-    
+
             consoleMessage('<- userId', userId);
-    
+
             Authenticate2FA(frame);
 
         }
-                
+
     }else{
 
     	consoleMessage('<-' + ret.n, JSON.stringify(ret));
@@ -159,9 +159,9 @@ function startTrading(frame){
 
 //Function WebAuthenticateUser
 function WebAuthenticateUser(frame){
-    
-    frame.n = "WebAuthenticateUser";    
-    
+
+    frame.n = "WebAuthenticateUser";
+
     var requestPayload = {"UserName": userLogin, "Password": userPass};
 
     frame.o = JSON.stringify(requestPayload);
@@ -182,27 +182,27 @@ function WebAuthenticateUser(frame){
 
 //Function Authenticate2FA
 function Authenticate2FA(frame){
-    
-    frame.n = "Authenticate2FA";    
+
+    frame.n = "Authenticate2FA";
 
     var twoFA = "0000";
-    
+
     if (sessionToken == ""){
 
         consoleMessage(frame.n, 'Enter with 2FA Code:');
 
         stdin2FA.addListener("data", function(d) {
-            
+
             twoFA = d.toString().trim();
 
             if (twoFA != "0000"){
 
                 var requestPayload = { "Code": twoFA };
-            
+
                 frame.o = JSON.stringify(requestPayload);
 
                 consoleMessage(frame.n, JSON.stringify(frame));
-            
+
                 ws.send(JSON.stringify(frame), function ack(error) {
 
                     if (error != undefined){
@@ -212,7 +212,7 @@ function Authenticate2FA(frame){
                     }
 
                 });
-        
+
             }
 
         });
@@ -224,7 +224,7 @@ function Authenticate2FA(frame){
         frame.n = "WebAuthenticateUser";
 
         var requestPayload = { "UserId": userId , "SessionToken": JSON.parse(sessionToken) };
-            
+
         frame.o = JSON.stringify(requestPayload);
 
         consoleMessage(frame.n, JSON.stringify(frame));
@@ -234,16 +234,16 @@ function Authenticate2FA(frame){
             if (error != undefined){
 
                 console.log('<- Authenticate2FA.error: (' + error + ')');
-                
+
             }
 
         });
-        
+
 	    GetUserInfo(frame);
-        
+
     }
 
-    
+
 
 }
 
@@ -270,9 +270,9 @@ function SendOrder(frame){
             "StopPrice": 0,
             "TimeInForce": 1,
             "OMSId": 1,
-    
+
     };
-    
+
     frame.o = JSON.stringify(requestPayload);
 
     if (side == 0){
@@ -290,10 +290,10 @@ function SendOrder(frame){
     ws.send(JSON.stringify(frame), function ack(error) {
 
         ws = new WebSocket('wss://apifoxbitprod.alphapoint.com/WSGateway/')
-        
+
         console.log('SendOrder.error: (' + error + ')');
 
-    });    
+    });
 
 }
 
@@ -306,13 +306,13 @@ function CancelOrder(frame, OrderId){
         "OMSId": 1,
         "AccountId":81
     };
-    
+
     frame.o = JSON.stringify(requestPayload2);
 
     ws.send(JSON.stringify(frame), function ack(error) {
         console.log('CancelOrder.error: (' + error + ')');
-    });    
-    
+    });
+
 }
 
 function GetOrderHistory(frame){
@@ -323,15 +323,15 @@ function GetOrderHistory(frame){
         "OMSId": 1,
         "AccountId":81
     };
-    
+
     frame.o = JSON.stringify(requestPayload2);
 
     ws.send(JSON.stringify(frame), function ack(error) {
 
         console.log('GetOrderHistory.error: (' + error + ')');
-        
-    });    
-    
+
+    });
+
 }
 
 function GetOpenOrders(frame){
@@ -342,14 +342,14 @@ function GetOpenOrders(frame){
         "AccountId":81,
         "OMSId": 1
     };
-    
+
     frame.o = JSON.stringify(requestPayload2);
 
     ws.send(JSON.stringify(frame), function ack(error) {
 
         console.log('GetOpenOrders.error: (' + error + ')');
 
-    });    
+    });
 
 }
 
@@ -359,14 +359,14 @@ function GetUserInfo(frame){
 
     requestPayload2 = {
     };
-    
+
     frame.o = JSON.stringify(requestPayload2);
 
     ws.send(JSON.stringify(frame), function ack(error) {
 
         console.log('GetUserInfo.error: (' + error + ')');
 
-    });    
+    });
 
 }
 
@@ -377,20 +377,20 @@ function GetUserConfig(frame){
     requestPayload2 = {
 
     };
-    
+
     frame.o = JSON.stringify(requestPayload2);
 
     ws.send(JSON.stringify(frame), function ack(error) {
 
         console.log('GetUserInfo.error: (' + error + ')');
 
-    });    
+    });
 
 }
 
 //Function Console
 function consoleMessage(prefix, sulfix){
 
-    console.log('\r\n' + prefix + ': (' +sulfix + ')\r\n'); 
+    console.log('\r\n' + prefix + ': (' +sulfix + ')\r\n');
 
 }
